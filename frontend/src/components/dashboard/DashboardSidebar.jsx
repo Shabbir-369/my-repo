@@ -6,8 +6,8 @@ const navItems = [
   { id: "upload",   icon: "📸", label: "Upload & Analyse" },
   { id: "history",  icon: "📋", label: "Analysis History" },
   { id: "inbox",    icon: "💬", label: "Expert Inbox" },
-  { id: "sensors",  icon: "⚙️", label: "Manage Sensors" },
-  { id: "settings", icon: "🔧", label: "Settings" },
+  { id: "sensors",  icon: "🔧", label: "Manage Sensors" },
+  { id: "settings", icon: "⚙️", label: "Settings" },
 ];
 
 const DashboardSidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {

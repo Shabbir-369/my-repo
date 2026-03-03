@@ -1,12 +1,10 @@
 import { createContext, useContext, useState, useEffect } from "react";
 
-// ─── Context ────────────────────────────────────────────────────────────────
 const AuthContext = createContext(null);
 
-// ─── Provider ───────────────────────────────────────────────────────────────
 export const AuthProvider = ({ children }) => {
-  const [token, setToken]   = useState(() => localStorage.getItem("token") || null);
-  const [user, setUser]     = useState(() => {
+  const [token, setToken] = useState(() => localStorage.getItem("token") || null);
+  const [user, setUser] = useState(() => {
     try {
       const stored = localStorage.getItem("agrisense_user");
       return stored ? JSON.parse(stored) : null;
@@ -15,53 +13,73 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
-  // Keep localStorage in sync whenever token/user changes
+  // Store only plain fields
   useEffect(() => {
-    if (token && user) {
-      localStorage.setItem("token", token);
-      localStorage.setItem("agrisense_user", JSON.stringify(user));
-    } else {
-      localStorage.removeItem("token");
-      localStorage.removeItem("agrisense_user");
+    try {
+      if (token && user) {
+        const safeUser = {
+          id: user.id,
+          role: user.role,
+          full_name: user.full_name,
+          email: user.email,
+        };
+        localStorage.setItem("token", token);
+        localStorage.setItem("agrisense_user", JSON.stringify(safeUser));
+      } else {
+        localStorage.removeItem("token");
+        localStorage.removeItem("agrisense_user");
+      }
+    } catch (error) {
+      console.error("Failed to store auth data:", error);
     }
   }, [token, user]);
 
-  /**
-   * Call this after a successful login API response.
-   * @param {string} newToken  - JWT from backend
-   * @param {{ id, role, full_name }} userData - user info from backend
-   */
   const login = (newToken, userData) => {
+    console.log("login userData:", userData); // debug
+    // Ensure all fields are strings
+    const safeUser = {
+      id: userData.id,
+      role: String(userData.role),
+      full_name: String(userData.full_name),
+      email: String(userData.email),
+    };
     setToken(newToken);
-    setUser(userData);
+    setUser(safeUser);
   };
 
-  /** Clears everything and logs the user out */
   const logout = () => {
     setToken(null);
     setUser(null);
   };
 
+  const updateUser = (newData) => {
+    setUser((prev) => ({ ...prev, ...newData }));
+  };
+
   const isAuthenticated = Boolean(token);
-  const isFarmer        = user?.role === "farmer";
-  const isAdmin         = user?.role === "admin";
-  const isExpert        = user?.role === "expert";
+  const isFarmer = user?.role === "farmer";
+  const isAdmin = user?.role === "admin";
+  const isExpert = user?.role === "expert";
 
   return (
     <AuthContext.Provider
-      value={{ token, user, login, logout, isAuthenticated, isFarmer, isAdmin, isExpert }}
+      value={{
+        token,
+        user,
+        login,
+        logout,
+        updateUser,
+        isAuthenticated,
+        isFarmer,
+        isAdmin,
+        isExpert,
+      }}
     >
       {children}
     </AuthContext.Provider>
   );
 };
 
-// ─── Hook ────────────────────────────────────────────────────────────────────
-/**
- * Use this hook anywhere you need auth data:
- *
- *   const { token, user, login, logout, isFarmer } = useAuth();
- */
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");

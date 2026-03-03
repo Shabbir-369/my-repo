@@ -81,7 +81,8 @@ exports.loginUser = async (req, res) => {
       message: "Login successful ✅",
       token,
       role: user.role,
-      full_name: user.full_name
+      full_name: user.full_name,
+      email: user.email 
     });
 
   } catch (error) {

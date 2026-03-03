@@ -81,4 +81,8 @@ export const sendContactMessage = (formData) =>
 export const fetchMySensors = () => api.get("/sensors/my-sensors");
 export const deleteSensor = (sensorId) => api.delete(`/sensors/${sensorId}`);
 
+export const updateProfile = (data) => api.patch("/user/profile", data);
+export const changePassword = (data) => api.patch("/user/change-password", data);
+export const deleteAccount = () => api.delete("/user/account");
+
 export default api;

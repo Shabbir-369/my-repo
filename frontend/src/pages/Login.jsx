@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { jwtDecode } from "jwt-decode";   // <-- add this
+import { jwtDecode } from "jwt-decode";
 import "../auth.css";
 import logo from "../assets/logo.png";
 import axios from "axios";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();            // <-- get login function
+  const { login } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -31,20 +31,19 @@ const Login = () => {
         password: form.password,
       });
 
-      const { token, role, full_name } = res.data;
+      const { token, role, full_name, email } = res.data; // email now included
 
-      // Decode the JWT to get the user ID
+      // Decode token to get user ID
       const decoded = jwtDecode(token);
       const userData = {
-        id: decoded.id,       // comes from the JWT payload
+        id: decoded.id,
         role,
         full_name,
+        email, // use email from response
       };
 
-      // Store everything via AuthContext
       login(token, userData);
 
-      // Redirect based on role
       if (role === "admin") {
         navigate("/admin-dashboard");
       } else if (role === "expert") {
@@ -52,13 +51,13 @@ const Login = () => {
       } else {
         navigate("/farmer-dashboard");
       }
-
     } catch (error) {
       setError(error.response?.data?.message || "Invalid credentials");
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="auth-page">

@@ -38,6 +38,8 @@ const sensorRoutes = require("./routes/sensorRoutes");
 
 const contactRoutes = require("./routes/contactRoutes");
 
+const userRoutes = require("./routes/userRoutes");
+
 const app = express();
 
 app.use(cors());
@@ -52,6 +54,8 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/sensors", sensorRoutes);
+
+app.use("/api/user", userRoutes);
 
 const PORT = process.env.PORT || 5000;
 
