@@ -130,33 +130,31 @@ exports.addSensorData = async (req, res) => {
 // };
 
 
+// backend/src/controllers/sensorController.js
+
 exports.getFarmerSensorData = async (req, res) => {
   try {
     const farmerId = req.user.id;
 
-    // Find the sensors owned by this specific farmer
     const [sensors] = await db.query(
       "SELECT id, esp32_mac_address FROM sensors WHERE farmer_id = ?",
       [farmerId]
     );
 
-    // console.log("Logged-in Farmer ID:", farmerId);
-    // console.log("Sensors found for this farmer:", sensors);
-
     if (sensors.length === 0) {
-      return res.status(200).json([]); // Return empty array instead of 404 so UI knows to show "No Sensors"
+      return res.status(200).json([]);
     }
 
     const results = [];
 
-    // Get the latest 10 readings for each sensor
     for (const sensor of sensors) {
+      // 🔁 CHANGE: ORDER BY recorded_at DESC to get the newest readings first
       const [readings] = await db.query(
         `SELECT moisture_level, temperature, ph_level,
                 nitrogen, phosphorus, potassium, recorded_at
          FROM sensor_readings
          WHERE sensor_id = ?
-         ORDER BY recorded_at ASC
+         ORDER BY recorded_at DESC   -- now DESC
          LIMIT 10`,
         [sensor.id]
       );
@@ -165,24 +163,23 @@ exports.getFarmerSensorData = async (req, res) => {
         sensor: sensor.esp32_mac_address,
         graph_data: readings.map(r => ({
           time: new Date(r.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          recorded_at: r.recorded_at,
           moisture: Number(r.moisture_level) || 0,
           temperature: Number(r.temperature) || 0,
           ph: Number(r.ph_level) || 0,
-          nitrogen: Number(r.nitrogen) || 0,     // Fixed: Added missing NPK
-          phosphorus: Number(r.phosphorus) || 0, // Fixed: Added missing NPK
-          potassium: Number(r.potassium) || 0    // Fixed: Added missing NPK
+          nitrogen: Number(r.nitrogen) || 0,
+          phosphorus: Number(r.phosphorus) || 0,
+          potassium: Number(r.potassium) || 0
         }))
       });
     }
 
     res.status(200).json(results);
-
   } catch (error) {
     console.error("Error in getFarmerSensorData:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 
 exports.getDailyAverage = async (req, res) => {

@@ -38,7 +38,7 @@ const FarmerDashboard = () => {
   // ── Tab renderer ───────────────────────────────────────────────────────────
   const renderContent = () => {
     switch (activeTab) {
-      case "sensor":   return <SensorFeed />;
+      case "sensor":   return <SensorFeed onManageSensors={() => setActiveTab("sensors")} />;
       case "upload":   return <UploadAnalysis />;
       case "history":  return <AnalysisHistory />;
       case "inbox":    return <ExpertInbox />;
@@ -46,7 +46,8 @@ const FarmerDashboard = () => {
       case "settings": return <DashboardSettings />;
       default:         return <SensorFeed />;
     }
-  };
+  }
+  const goToManageSensors = () => setActiveTab("sensors");
 
   return (
     <div className={`dash-layout ${sidebarOpen ? "" : "dash-sidebar-collapsed"}`}>

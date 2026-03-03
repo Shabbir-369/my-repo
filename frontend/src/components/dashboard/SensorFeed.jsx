@@ -14,6 +14,8 @@ const METRIC_COLORS = {
   potassium:   "#34d399",
 };
 
+const STALE_THRESHOLD_MINUTES = 0.17; // 10 seconds for testing
+
 const StatCard = ({ icon, label, value, unit, color, status }) => (
   <div className="sensor-stat-card" style={{ "--sc-color": color }}>
     <div className="ssc-top">
@@ -30,13 +32,14 @@ const StatCard = ({ icon, label, value, unit, color, status }) => (
   </div>
 );
 
-const SensorFeed = () => {
-  const [sensorData, setSensorData] = useState([]);      // array of { sensor: mac, graph_data: [...] }
+const SensorFeed = ({ onManageSensors }) => {   // ← prop added
+  const [sensorData, setSensorData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isLive, setIsLive] = useState(true);
   const [activeMetric, setActiveMetric] = useState("moisture");
   const [availableSensors, setAvailableSensors] = useState([]);
   const [selectedMac, setSelectedMac] = useState(null);
+  const [stale, setStale] = useState(false);
 
   const fetchRealData = useCallback(async () => {
     if (!isLive) return;
@@ -53,21 +56,35 @@ const SensorFeed = () => {
 
       const data = await response.json();
 
-      if (!data || data.length === 0) {
-        setSensorData([]);
-        setAvailableSensors([]);
+      // Transform and reverse to chronological order
+      const transformed = data.map(sensor => ({
+        sensor: sensor.sensor,
+        graph_data: sensor.graph_data
+          .reverse()
+          .map(r => ({
+            moisture: r.moisture,
+            temperature: r.temperature,
+            ph: r.ph,
+            nitrogen: r.nitrogen,
+            phosphorus: r.phosphorus,
+            potassium: r.potassium,
+            time: r.time,
+            recorded_at: r.recorded_at
+          }))
+      }));
+
+      setSensorData(transformed);
+
+      const withData = transformed.filter(s => s.graph_data?.length > 0);
+      setAvailableSensors(withData.map(s => s.sensor));
+
+      if (withData.length > 0) {
+        const stillExists = withData.some(s => s.sensor === selectedMac);
+        if (!stillExists || !selectedMac) {
+          setSelectedMac(withData[0].sensor);
+        }
+      } else {
         setSelectedMac(null);
-        setLoading(false);
-        return;
-      }
-
-      setSensorData(data);
-
-      // Extract MAC addresses that have data
-      const macs = data.map(item => item.sensor);
-      setAvailableSensors(macs);
-      if (!selectedMac || !macs.includes(selectedMac)) {
-        setSelectedMac(macs[0]);
       }
 
       setLoading(false);
@@ -83,12 +100,26 @@ const SensorFeed = () => {
     return () => clearInterval(id);
   }, [fetchRealData]);
 
-  // Get the currently selected sensor's data
   const currentSensor = sensorData.find(s => s.sensor === selectedMac);
   const graphData = currentSensor?.graph_data || [];
   const latest = graphData.length > 0 ? graphData[graphData.length - 1] : null;
 
-  // NPK data for bar chart
+  // Staleness checker
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!latest || !latest.recorded_at) {
+        setStale(false);
+        return;
+      }
+      const lastTime = new Date(latest.recorded_at).getTime();
+      const now = Date.now();
+      const diffMinutes = (now - lastTime) / (1000 * 60);
+      setStale(diffMinutes > STALE_THRESHOLD_MINUTES);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [latest]);
+
   const npkData = latest ? [
     { name: "N", value: latest.nitrogen,  fill: "#a78bfa" },
     { name: "P", value: latest.phosphorus, fill: "#fb923c" },
@@ -104,13 +135,38 @@ const SensorFeed = () => {
     );
   }
 
-  if (!latest) {
+  if (sensorData.length === 0) {
     return (
       <div className="no-sensor-state">
         <span className="no-sensor-icon">📡</span>
-        <h3>No Sensor Data Found</h3>
-        <p>Ensure your ESP32 is sending data or register a new sensor.</p>
-        <button className="btn-primary" onClick={() => {}}>Go to Manage Sensors</button>
+        <h3>No Sensors Registered</h3>
+        <p>Register an ESP32 sensor to start receiving live data.</p>
+        <button className="btn-primary" onClick={onManageSensors}>
+          Go to Manage Sensors
+        </button>
+      </div>
+    );
+  }
+
+  if (availableSensors.length === 0) {
+    return (
+      <div className="no-sensor-state">
+        <span className="no-sensor-icon">⏳</span>
+        <h3>Waiting for Data</h3>
+        <p>Sensors are registered but no data received yet. Ensure your ESP32 is configured and sending readings.</p>
+        <button className="btn-primary" onClick={onManageSensors}>
+          Check Sensors
+        </button>
+      </div>
+    );
+  }
+
+  if (!latest) {
+    return (
+      <div className="no-sensor-state">
+        <span className="no-sensor-icon">⚠️</span>
+        <h3>No Data for Selected Sensor</h3>
+        <p>The selected sensor has not sent any readings yet.</p>
       </div>
     );
   }
@@ -120,11 +176,17 @@ const SensorFeed = () => {
       {/* Live Status Bar */}
       <div className="sensor-status-bar">
         <div className="sensor-live-indicator">
-          <span className={`live-dot ${isLive ? "live-dot-active" : ""}`}></span>
-          <span>{isLive ? "Live — updating every 3s" : "Paused"}</span>
+          <span
+            className={`live-dot ${isLive ? (stale ? "live-dot-stale" : "live-dot-active") : ""}`}
+            style={stale ? { background: "#f59e0b", boxShadow: "0 0 6px #f59e0b" } : {}}
+          ></span>
+          <span>
+            {isLive
+              ? (stale ? "Stale data — last reading > 10 sec ago" : "Live — updating every 3s")
+              : "Paused"}
+          </span>
         </div>
         <div className="sensor-status-bar-right">
-          {/* Sensor selection dropdown */}
           {availableSensors.length > 1 && (
             <select
               className="sensor-select"
