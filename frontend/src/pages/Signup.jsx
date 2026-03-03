@@ -291,9 +291,9 @@ const Signup = () => {
 
             <p className="auth-terms">
               By signing up, you agree to our{" "}
-              <Link to="/terms" className="auth-switch-link">Terms of Service</Link>{" "}
+              <Link to="/terms-of-service" className="auth-switch-link">Terms of Service</Link>{" "}
               and{" "}
-              <Link to="/privacy" className="auth-switch-link">Privacy Policy</Link>.
+              <Link to="/privacy-policy" className="auth-switch-link">Privacy Policy</Link>.
             </p>
           </form>
 

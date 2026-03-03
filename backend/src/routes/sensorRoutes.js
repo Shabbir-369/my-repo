@@ -3,7 +3,8 @@ const router = express.Router();
 
 const authMiddleware = require("../middlewares/authMiddleware");
 const roleMiddleware = require("../middlewares/roleMiddleware");
-const { registerSensor, addSensorData, getFarmerSensorData, getDailyAverage } = require("../controllers/sensorController");
+const { registerSensor, addSensorData, getFarmerSensorData, getDailyAverage, getMySensors } = require("../controllers/sensorController");
+const { deleteSensor } = require("../controllers/sensorController");
 
 // Only farmers can register sensors
 router.post(
@@ -30,4 +31,13 @@ router.get(
   roleMiddleware(["farmer"]),
   getDailyAverage
 );
+
+router.get("/my-sensors", authMiddleware, roleMiddleware(["farmer"]), getMySensors);
 module.exports = router;
+
+router.delete(
+  "/:sensorId",
+  authMiddleware,
+  roleMiddleware(["farmer"]),
+  deleteSensor
+);

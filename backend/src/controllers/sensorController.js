@@ -222,3 +222,56 @@ exports.getDailyAverage = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
+// backend/src/controllers/sensorController.js
+
+// ... existing functions ...
+
+/**
+ * Get all sensors owned by the logged-in farmer (without readings).
+ * Returns basic info: MAC, status, created_at, optional lat/long.
+ */
+exports.getMySensors = async (req, res) => {
+  try {
+    const farmerId = req.user.id;
+
+    const [sensors] = await db.query(
+      `SELECT id, esp32_mac_address, status, latitude, longitude, created_at
+       FROM sensors
+       WHERE farmer_id = ?
+       ORDER BY created_at DESC`,
+      [farmerId]
+    );
+
+    res.status(200).json(sensors);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+exports.deleteSensor = async (req, res) => {
+  try {
+    const { sensorId } = req.params;
+    const farmerId = req.user.id;
+
+    // Verify sensor belongs to this farmer
+    const [sensors] = await db.query(
+      "SELECT id FROM sensors WHERE id = ? AND farmer_id = ?",
+      [sensorId, farmerId]
+    );
+    if (sensors.length === 0) {
+      return res.status(404).json({ message: "Sensor not found or not yours" });
+    }
+
+    // Delete sensor (readings will cascade if foreign key set up that way)
+    await db.query("DELETE FROM sensors WHERE id = ?", [sensorId]);
+
+    res.status(200).json({ message: "Sensor deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};

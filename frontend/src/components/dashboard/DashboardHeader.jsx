@@ -7,34 +7,26 @@ const tabTitles = {
   settings: { title: "Account Settings",   sub: "Update your profile and preferences" },
 };
 
+import { useAuth } from "../../context/AuthContext";
 const DashboardHeader = ({ activeTab, sidebarOpen, setSidebarOpen }) => {
+  const { user } = useAuth();   // <-- get user from context
   const info = tabTitles[activeTab] || tabTitles.sensor;
-  // Replace with real user data from AuthContext / API
-  const user = { name: "Arjun Mehta", initials: "AM" };
+
+  // Fallback if user is not loaded yet
+  const displayName = user?.full_name || "Farmer";
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <header className="dash-header">
-      {/* Mobile menu toggle */}
-      <button className="dash-header-menu-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-        ☰
-      </button>
-
-      <div className="dash-header-title-block">
-        <h1 className="dash-header-title">{info.title}</h1>
-        <p className="dash-header-sub">{info.sub}</p>
-      </div>
-
-      <div className="dash-header-right">
-        {/* Notification bell */}
-        <button className="dash-notif-btn" title="Notifications">
-          <span>🔔</span>
-          <span className="notif-badge">2</span>
-        </button>
-        {/* User avatar */}
-        <div className="dash-user-chip">
-          <div className="dash-user-avatar">{user.initials}</div>
-          <span className="dash-user-name">{user.name}</span>
-        </div>
+      {/* ... rest of the component ... */}
+      <div className="dash-user-chip">
+        <div className="dash-user-avatar">{initials}</div>
+        <span className="dash-user-name">{displayName}</span>
       </div>
     </header>
   );

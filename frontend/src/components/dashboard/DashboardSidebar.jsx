@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext"; // adjust path if needed
 
 const navItems = [
   { id: "sensor",   icon: "📡", label: "Live Sensor Feed" },
@@ -10,6 +11,12 @@ const navItems = [
 ];
 
 const DashboardSidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
+   const { logout } = useAuth();   // <-- get logout
+
+  const handleLogout = () => {
+    logout();
+    window.location.href = "/login";   // or use navigate
+  };
   return (
     <aside className={`dash-sidebar ${sidebarOpen ? "dash-sidebar-open" : "dash-sidebar-closed"}`}>
       {/* Logo */}
@@ -53,13 +60,10 @@ const DashboardSidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen
 
       {/* Bottom: Logout */}
       <div className="dash-sidebar-footer">
-        <button
-          className="dash-logout-btn"
-          onClick={() => { localStorage.removeItem("token"); window.location.href = "/login"; }}
-        >
-          <span>🚪</span>
-          {sidebarOpen && <span>Log Out</span>}
-        </button>
+        <button className="dash-logout-btn" onClick={handleLogout}>
+      <span>🚪</span>
+      {sidebarOpen && <span>Log Out</span>}
+    </button>
       </div>
     </aside>
   );

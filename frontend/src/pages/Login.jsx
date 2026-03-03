@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { jwtDecode } from "jwt-decode";   // <-- add this
 import "../auth.css";
 import logo from "../assets/logo.png";
 import axios from "axios";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();            // <-- get login function
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -17,40 +20,45 @@ const Login = () => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  try {
-    setLoading(true);
-    setError("");
+    try {
+      setLoading(true);
+      setError("");
 
-    const res = await axios.post(
-      "http://localhost:5000/api/auth/login",
-      {
+      const res = await axios.post("http://localhost:5000/api/auth/login", {
         email: form.email,
         password: form.password,
+      });
+
+      const { token, role, full_name } = res.data;
+
+      // Decode the JWT to get the user ID
+      const decoded = jwtDecode(token);
+      const userData = {
+        id: decoded.id,       // comes from the JWT payload
+        role,
+        full_name,
+      };
+
+      // Store everything via AuthContext
+      login(token, userData);
+
+      // Redirect based on role
+      if (role === "admin") {
+        navigate("/admin-dashboard");
+      } else if (role === "expert") {
+        navigate("/expert-dashboard");
+      } else {
+        navigate("/farmer-dashboard");
       }
-    );
 
-    // Store token
-    localStorage.setItem("token", res.data.token);
-    localStorage.setItem("role", res.data.role);
-    localStorage.setItem("full_name", res.data.full_name);
-
-    // Redirect based on role
-    if (res.data.role === "admin") {
-      navigate("/admin-dashboard");
-    } else if (res.data.role === "expert") {
-      navigate("/expert-dashboard");
-    } else {
-      navigate("/farmer-dashboard");
+    } catch (error) {
+      setError(error.response?.data?.message || "Invalid credentials");
+    } finally {
+      setLoading(false);
     }
-
-  } catch (error) {
-    setError(error.response?.data?.message || "Invalid credentials");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="auth-page">

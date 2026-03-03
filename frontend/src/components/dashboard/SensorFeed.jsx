@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, RadialBarChart, RadialBar, Legend
+  ResponsiveContainer, RadialBarChart, RadialBar
 } from "recharts";
 
 const METRIC_COLORS = {
@@ -31,12 +31,12 @@ const StatCard = ({ icon, label, value, unit, color, status }) => (
 );
 
 const SensorFeed = () => {
-  const [history, setHistory]     = useState([]);
-  const [latest, setLatest]       = useState(null);
-  const [isLive, setIsLive]       = useState(true);
+  const [sensorData, setSensorData] = useState([]);      // array of { sensor: mac, graph_data: [...] }
+  const [loading, setLoading] = useState(true);
+  const [isLive, setIsLive] = useState(true);
   const [activeMetric, setActiveMetric] = useState("moisture");
-  const [noSensor, setNoSensor]   = useState(false);
-  const [loading, setLoading]     = useState(true); // Added loading state
+  const [availableSensors, setAvailableSensors] = useState([]);
+  const [selectedMac, setSelectedMac] = useState(null);
 
   const fetchRealData = useCallback(async () => {
     if (!isLive) return;
@@ -46,46 +46,36 @@ const SensorFeed = () => {
       if (!token) return;
 
       const response = await fetch("http://localhost:5000/api/sensors/my-data", {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
+        headers: { "Authorization": `Bearer ${token}` }
       });
 
       if (!response.ok) throw new Error("Failed to fetch");
 
       const data = await response.json();
 
-      if (!data || data.length === 0 || !data[0].graph_data || data[0].graph_data.length === 0) {
-        setNoSensor(true);
+      if (!data || data.length === 0) {
+        setSensorData([]);
+        setAvailableSensors([]);
+        setSelectedMac(null);
         setLoading(false);
         return;
       }
 
-      setNoSensor(false);
+      setSensorData(data);
 
-      // Extract graph_data from the first sensor
-      const rawData = data[0].graph_data;
+      // Extract MAC addresses that have data
+      const macs = data.map(item => item.sensor);
+      setAvailableSensors(macs);
+      if (!selectedMac || !macs.includes(selectedMac)) {
+        setSelectedMac(macs[0]);
+      }
 
-      // Map backend keys to frontend keys, handle nulls gracefully
-      const formattedData = rawData.map(item => ({
-        moisture: item.moisture_level || item.moisture || 0,
-        temperature: item.temperature || 0,
-        ph: item.ph_level || item.ph || 0,
-        nitrogen: item.nitrogen || 0,
-        phosphorus: item.phosphorus || 0,
-        potassium: item.potassium || 0,
-        // If backend sends recorded_at, format it. Otherwise use time.
-        time: item.time || (item.recorded_at ? new Date(item.recorded_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "")
-      }));
-
-      setHistory(formattedData);
-      setLatest(formattedData[formattedData.length - 1]);
       setLoading(false);
     } catch (error) {
       console.error("Error pulling sensor feed:", error);
       setLoading(false);
     }
-  }, [isLive]);
+  }, [isLive, selectedMac]);
 
   useEffect(() => {
     fetchRealData();
@@ -93,7 +83,12 @@ const SensorFeed = () => {
     return () => clearInterval(id);
   }, [fetchRealData]);
 
-  // Safely map NPK data only if 'latest' exists
+  // Get the currently selected sensor's data
+  const currentSensor = sensorData.find(s => s.sensor === selectedMac);
+  const graphData = currentSensor?.graph_data || [];
+  const latest = graphData.length > 0 ? graphData[graphData.length - 1] : null;
+
+  // NPK data for bar chart
   const npkData = latest ? [
     { name: "N", value: latest.nitrogen,  fill: "#a78bfa" },
     { name: "P", value: latest.phosphorus, fill: "#fb923c" },
@@ -109,7 +104,7 @@ const SensorFeed = () => {
     );
   }
 
-  if (noSensor || !latest) {
+  if (!latest) {
     return (
       <div className="no-sensor-state">
         <span className="no-sensor-icon">📡</span>
@@ -129,7 +124,27 @@ const SensorFeed = () => {
           <span>{isLive ? "Live — updating every 3s" : "Paused"}</span>
         </div>
         <div className="sensor-status-bar-right">
-          <span className="sensor-id-tag">Sensor: {latest.esp32_mac_address || "Connected"}</span>
+          {/* Sensor selection dropdown */}
+          {availableSensors.length > 1 && (
+            <select
+              className="sensor-select"
+              value={selectedMac || ''}
+              onChange={(e) => setSelectedMac(e.target.value)}
+              style={{
+                background: "var(--bg-card)",
+                border: "1px solid var(--border-light)",
+                borderRadius: "var(--radius-md)",
+                padding: "4px 8px",
+                color: "var(--text-primary)",
+                fontSize: "0.8rem",
+              }}
+            >
+              {availableSensors.map(mac => (
+                <option key={mac} value={mac}>{mac}</option>
+              ))}
+            </select>
+          )}
+          <span className="sensor-id-tag">Sensor: {selectedMac}</span>
           <button className={`live-toggle-btn ${isLive ? "live-toggle-pause" : "live-toggle-resume"}`} onClick={() => setIsLive(p => !p)}>
             {isLive ? "⏸ Pause" : "▶ Resume"}
           </button>
@@ -161,7 +176,7 @@ const SensorFeed = () => {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={history} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+            <LineChart data={graphData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1f2f1f" />
               <XAxis dataKey="time" tick={{ fontSize: 10, fill: "#4a6b4a" }} interval="preserveStartEnd" />
               <YAxis tick={{ fontSize: 10, fill: "#4a6b4a" }} />
