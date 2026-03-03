@@ -6,6 +6,8 @@ import Login           from "./pages/Login";
 import Signup          from "./pages/Signup";
 import FarmerDashboard from "./pages/FarmerDashboard";
 import ScrollToTop     from "./components/ScrollToTop";
+import PrivacyPolicy   from "./pages/PrivacyPolicy";
+import TermsOfService  from "./pages/TermsofService.jsx";
 import "./index.css";
 
 function App() {
@@ -19,6 +21,8 @@ function App() {
         <Route path="/login"             element={<Login />} />
         <Route path="/signup"            element={<Signup />} />
         <Route path="/farmer-dashboard"  element={<FarmerDashboard />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
       </Routes>
     </BrowserRouter>
   );
