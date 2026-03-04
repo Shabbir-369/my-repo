@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { forgotPassword, verifyResetOtp, resetPassword } from "../services/api";
 import "../auth.css";
+import logo from "../assets/logo.png";
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -117,7 +118,7 @@ const ForgotPassword = () => {
       <div className="auth-form-panel" style={{ margin: "0 auto", maxWidth: "500px" }}>
         <div className="auth-form-inner">
           <Link to="/" className="auth-logo">
-            <span className="auth-logo-icon">🌱</span>
+            <span className="auth-logo-icon"><img src={logo} alt="🌱" /></span>
             <span className="auth-logo-text">AgriSense</span>
           </Link>
 
