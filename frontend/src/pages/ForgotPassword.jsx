@@ -118,9 +118,7 @@ const ForgotPassword = () => {
       <div className="auth-form-panel" style={{ margin: "0 auto", maxWidth: "500px" }}>
         <div className="auth-form-inner">
           <Link to="/" className="auth-logo">
-            <span className="auth-logo-icon">
-                        <img src={logo} alt="🌱" />
-                      </span>
+            <span className="auth-logo-icon"><img src={logo} alt="🌱" /></span>
             <span className="auth-logo-text">AgriSense</span>
           </Link>
 
