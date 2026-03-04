@@ -128,7 +128,7 @@ const Signup = () => {
           {/* Mobile logo (hidden on desktop) */}
           <Link to="/" className="auth-logo auth-logo-mobile">
             <span className="auth-logo-icon">
-              <img src="./src/assets/logo.png" alt="🌱" />
+              <img src={logo} alt="🌱" />
             </span>
             <span className="auth-logo-text">AgriSense</span>
           </Link>
