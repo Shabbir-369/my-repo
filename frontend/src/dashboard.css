@@ -367,7 +367,7 @@
 
 /* Sensor selector dropdown */
 .sensor-select {
-  height: 32px;
+  height: 30px;
   background: var(--bg-base);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
@@ -383,14 +383,14 @@
   background-position: right 9px center;
   transition: border-color 0.2s;
   max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* overflow: hidden;
+  text-overflow: ellipsis; */
 }
 .sensor-select:focus { outline: none; border-color: var(--green-primary); }
 .sensor-select option { background: #111a11; }
 
 /* Sensor ID pill */
-.sensor-id-tag {
+/* .sensor-id-tag {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -407,14 +407,35 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   letter-spacing: 0.2px;
+} */
+ .sensor-id-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 100px;
+  max-width: 170px;
 }
-.sensor-id-tag::before {
+
+.sensor-id-tag span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0; /* crucial for flex children to shrink */
+}
+/* .sensor-id-tag::before {
   content: '';
   width: 5px; height: 5px;
   border-radius: 50%;
   background: var(--text-muted);
   flex-shrink: 0;
-}
+} */
 
 /* Pause / Resume toggle */
 .live-toggle-btn {
@@ -683,7 +704,7 @@
   .history-detail-row { grid-template-columns: 1fr; }
   /* Sensor status bar: stack on mobile */
   .sensor-status-bar { flex-direction: column; align-items: flex-start; gap: 12px; }
-  .sensor-status-bar-right { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+  .sensor-status-bar-right { width: 100%; justify-content: flex-start; flex-wrap: wrap;}
   .sensor-id-tag { max-width: 200px; }
 }
 
