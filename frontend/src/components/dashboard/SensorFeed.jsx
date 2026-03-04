@@ -5,6 +5,9 @@ import {
   ResponsiveContainer, RadialBarChart, RadialBar
 } from "recharts";
 
+// import { API_ENDPOINTS } from "../../config/api";
+import { fetchSensorData } from "../../services/api";
+
 const METRIC_COLORS = {
   moisture:    "#60a5fa",
   temperature: "#f59e0b",
@@ -41,58 +44,109 @@ const SensorFeed = ({ onManageSensors }) => {   // ← prop added
   const [selectedMac, setSelectedMac] = useState(null);
   const [stale, setStale] = useState(false);
 
+  // const fetchRealData = useCallback(async () => {
+  //   if (!isLive) return;
+
+  //   try {
+  //     const token = localStorage.getItem("token");
+  //     if (!token) return;
+
+  //     const response = await fetch(`${API_ENDPOINTS.MY_SENSOR_DATA}`, {
+  //       headers: { "Authorization": `Bearer ${token}` }
+  //     });
+
+  //     if (!response.ok) throw new Error("Failed to fetch");
+
+  //     const data = await response.json();
+
+    
+
+  //     // Transform and reverse to chronological order
+  //     const transformed = data.map(sensor => ({
+  //       sensor: sensor.sensor,
+  //       graph_data: sensor.graph_data
+  //         .reverse()
+  //         .map(r => ({
+  //           moisture: r.moisture,
+  //           temperature: r.temperature,
+  //           ph: r.ph,
+  //           nitrogen: r.nitrogen,
+  //           phosphorus: r.phosphorus,
+  //           potassium: r.potassium,
+  //           time: r.time,
+  //           recorded_at: r.recorded_at
+  //         }))
+  //     }));
+
+  //     setSensorData(transformed);
+
+  //     const withData = transformed.filter(s => s.graph_data?.length > 0);
+  //     setAvailableSensors(withData.map(s => s.sensor));
+
+  //     if (withData.length > 0) {
+  //       const stillExists = withData.some(s => s.sensor === selectedMac);
+  //       if (!stillExists || !selectedMac) {
+  //         setSelectedMac(withData[0].sensor);
+  //       }
+  //     } else {
+  //       setSelectedMac(null);
+  //     }
+
+  //     setLoading(false);
+  //   } catch (error) {
+  //     console.error("Error pulling sensor feed:", error);
+  //     setLoading(false);
+  //   }
+  // }, [isLive, selectedMac]);
+
   const fetchRealData = useCallback(async () => {
-    if (!isLive) return;
+  if (!isLive) return;
 
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
+  try {
+    const { data } = await fetchSensorData();
 
-      const response = await fetch("http://localhost:5000/api/sensors/my-data", {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
+    // Transform and reverse to chronological order
+    const transformed = (data || []).map(sensor => ({
+      sensor: sensor.sensor,
+      graph_data: sensor.graph_data
+        .reverse()
+        .map(r => ({
+          moisture: r.moisture,
+          temperature: r.temperature,
+          ph: r.ph,
+          nitrogen: r.nitrogen,
+          phosphorus: r.phosphorus,
+          potassium: r.potassium,
+          time: r.time,
+          recorded_at: r.recorded_at
+        }))
+    }));
 
-      if (!response.ok) throw new Error("Failed to fetch");
+    setSensorData(transformed);
 
-      const data = await response.json();
+    const withData = transformed.filter(s => s.graph_data?.length > 0);
+    setAvailableSensors(withData.map(s => s.sensor));
 
-      // Transform and reverse to chronological order
-      const transformed = data.map(sensor => ({
-        sensor: sensor.sensor,
-        graph_data: sensor.graph_data
-          .reverse()
-          .map(r => ({
-            moisture: r.moisture,
-            temperature: r.temperature,
-            ph: r.ph,
-            nitrogen: r.nitrogen,
-            phosphorus: r.phosphorus,
-            potassium: r.potassium,
-            time: r.time,
-            recorded_at: r.recorded_at
-          }))
-      }));
-
-      setSensorData(transformed);
-
-      const withData = transformed.filter(s => s.graph_data?.length > 0);
-      setAvailableSensors(withData.map(s => s.sensor));
-
-      if (withData.length > 0) {
-        const stillExists = withData.some(s => s.sensor === selectedMac);
-        if (!stillExists || !selectedMac) {
-          setSelectedMac(withData[0].sensor);
-        }
-      } else {
-        setSelectedMac(null);
+    if (withData.length > 0) {
+      const stillExists = withData.some(s => s.sensor === selectedMac);
+      if (!stillExists || !selectedMac) {
+        setSelectedMac(withData[0].sensor);
       }
-
-      setLoading(false);
-    } catch (error) {
-      console.error("Error pulling sensor feed:", error);
-      setLoading(false);
+    } else {
+      setSelectedMac(null);
     }
-  }, [isLive, selectedMac]);
+
+    setLoading(false);
+
+  } catch (error) {
+    console.error("Error pulling sensor feed:", error);
+    setLoading(false);
+  }
+
+}, [isLive, selectedMac]);
+
+
+
 
   useEffect(() => {
     fetchRealData();

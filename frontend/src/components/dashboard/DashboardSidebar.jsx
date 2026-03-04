@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext"; // adjust path if needed
+import logo from "../../assets/logo.png";
 
 const navItems = [
   { id: "sensor",   icon: "📡", label: "Live Sensor Feed" },
@@ -23,7 +24,7 @@ const DashboardSidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen
       <div className="dash-sidebar-logo">
         <Link to="/" className="dash-logo-link">
           <span className="dash-logo-icon">
-            <img src="./src/assets/logo.png" alt="🌱" />
+            <img src={logo} alt="🌱" />
           </span>
           {sidebarOpen && <span className="dash-logo-text">AgriSense</span>}
         </Link>

@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../auth.css";
 import logo from "../assets/logo.png";
-import axios from "axios";
+// import axios from "axios";
+// import { API_ENDPOINTS } from "../config/api";
+import { registerUser } from "../services/api";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -38,7 +40,45 @@ const Signup = () => {
 
   const strength = getPasswordStrength(form.password);
 
-  const handleSubmit = async (e) => {
+//   const handleSubmit = async (e) => {
+//   e.preventDefault();
+
+//   if (form.password !== form.confirm_password) {
+//     setError("Passwords do not match.");
+//     return;
+//   }
+
+//   if (form.password.length < 8) {
+//     setError("Password must be at least 8 characters.");
+//     return;
+//   }
+
+//   try {
+//     setLoading(true);
+//     setError("");
+
+//     const res = await axios.post(
+//       `${API_ENDPOINTS.REGISTER}`,
+//       {
+//         full_name: form.full_name,
+//         email: form.email,
+//         password: form.password,
+//         role: form.role,
+//       }
+//     );
+
+//     alert("Registration successful ✅");
+//     navigate("/login");
+
+//   } catch (error) {
+//     setError(error.response?.data?.message || "Registration failed");
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+
+
+const handleSubmit = async (e) => {
   e.preventDefault();
 
   if (form.password !== form.confirm_password) {
@@ -55,15 +95,12 @@ const Signup = () => {
     setLoading(true);
     setError("");
 
-    const res = await axios.post(
-      "http://localhost:5000/api/auth/register",
-      {
-        full_name: form.full_name,
-        email: form.email,
-        password: form.password,
-        role: form.role,
-      }
-    );
+    await registerUser({
+      full_name: form.full_name,
+      email: form.email,
+      password: form.password,
+      role: form.role,
+    });
 
     alert("Registration successful ✅");
     navigate("/login");
@@ -74,6 +111,8 @@ const Signup = () => {
     setLoading(false);
   }
 };
+
+
 
   const roles = [
     { value: "farmer", icon: "🌾", label: "Farmer", desc: "Monitor soil & get expert advice" },

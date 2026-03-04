@@ -4,7 +4,9 @@ import { useAuth } from "../context/AuthContext";
 import { jwtDecode } from "jwt-decode";
 import "../auth.css";
 import logo from "../assets/logo.png";
-import axios from "axios";
+// import axios from "axios";
+// import { API_ENDPOINTS } from "../config/api";
+import { loginUser } from "../services/api";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -19,44 +21,86 @@ const Login = () => {
     setError("");
   };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+
+  //   try {
+  //     setLoading(true);
+  //     setError("");
+
+  //     const res = await axios.post(`${API_ENDPOINTS.LOGIN}`, {
+  //       email: form.email,
+  //       password: form.password,
+  //     });
+
+  //     const { token, role, full_name, email } = res.data; // email now included
+
+  //     // Decode token to get user ID
+  //     const decoded = jwtDecode(token);
+  //     const userData = {
+  //       id: decoded.id,
+  //       role,
+  //       full_name,
+  //       email, // use email from response
+  //     };
+
+  //     login(token, userData);
+
+  //     if (role === "admin") {
+  //       navigate("/admin-dashboard");
+  //     } else if (role === "expert") {
+  //       navigate("/expert-dashboard");
+  //     } else {
+  //       navigate("/farmer-dashboard");
+  //     }
+  //   } catch (error) {
+  //     setError(error.response?.data?.message || "Invalid credentials");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      setLoading(true);
-      setError("");
+  try {
+    setLoading(true);
+    setError("");
 
-      const res = await axios.post("http://localhost:5000/api/auth/login", {
-        email: form.email,
-        password: form.password,
-      });
+    const { data } = await loginUser({
+      email: form.email,
+      password: form.password,
+    });
 
-      const { token, role, full_name, email } = res.data; // email now included
+    const { token, role, full_name, email } = data;
 
-      // Decode token to get user ID
-      const decoded = jwtDecode(token);
-      const userData = {
-        id: decoded.id,
-        role,
-        full_name,
-        email, // use email from response
-      };
+    // Decode token to get user ID
+    const { id } = jwtDecode(token);
 
-      login(token, userData);
+const userData = {
+  id,
+  role,
+  full_name,
+  email,
+};
 
-      if (role === "admin") {
-        navigate("/admin-dashboard");
-      } else if (role === "expert") {
-        navigate("/expert-dashboard");
-      } else {
-        navigate("/farmer-dashboard");
-      }
-    } catch (error) {
-      setError(error.response?.data?.message || "Invalid credentials");
-    } finally {
-      setLoading(false);
+    login(token, userData);
+
+    if (role === "admin") {
+      navigate("/admin-dashboard");
+    } else if (role === "expert") {
+      navigate("/expert-dashboard");
+    } else {
+      navigate("/farmer-dashboard");
     }
-  };
+
+  } catch (error) {
+    setError(error.response?.data?.message || "Invalid credentials");
+  } finally {
+    setLoading(false);
+  }
+};
 
 
   return (
