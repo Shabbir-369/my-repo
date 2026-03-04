@@ -23,10 +23,25 @@ const DashboardHeader = ({ activeTab, sidebarOpen, setSidebarOpen }) => {
 
   return (
     <header className="dash-header">
-      {/* ... rest of the component ... */}
-      <div className="dash-user-chip">
-        <div className="dash-user-avatar">{initials}</div>
-        <span className="dash-user-name">{displayName}</span>
+      {/* Mobile hamburger — only visible on small screens via CSS */}
+      <button
+        className="dash-header-menu-btn"
+        onClick={() => setSidebarOpen((p) => !p)}
+        aria-label="Toggle sidebar"
+      >
+        {sidebarOpen ? "✕" : "☰"}
+      </button>
+
+      <div className="dash-header-title-block">
+        <div className="dash-header-title">{info.title}</div>
+        <div className="dash-header-sub">{info.sub}</div>
+      </div>
+
+      <div className="dash-header-right">
+        <div className="dash-user-chip">
+          <div className="dash-user-avatar">{initials}</div>
+          <span className="dash-user-name">{displayName}</span>
+        </div>
       </div>
     </header>
   );
