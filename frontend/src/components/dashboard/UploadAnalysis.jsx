@@ -1,12 +1,5 @@
 import { useState, useRef } from "react";
-
-const mockAIResults = [
-  "Soil appears healthy. Maintain current irrigation schedule.",
-  "Nitrogen deficiency detected. Consider adding urea fertilizer.",
-  "High moisture content. Reduce watering frequency for next 3 days.",
-  "Soil pH slightly acidic (5.8). Add agricultural lime to raise pH.",
-  "Potassium levels are adequate. Phosphorus may need supplementation.",
-];
+import { uploadAnalysis } from "../../services/api";
 
 const UploadAnalysis = () => {
   const [type, setType]         = useState("soil");
@@ -15,10 +8,19 @@ const UploadAnalysis = () => {
   const [loading, setLoading]   = useState(false);
   const [result, setResult]     = useState(null);
   const [dragOver, setDragOver] = useState(false);
+  const [error, setError]       = useState("");
   const fileInputRef            = useRef();
 
   const handleFile = (f) => {
-    if (!f || !f.type.startsWith("image/")) return;
+    if (!f || !f.type.startsWith("image/")) {
+      setError("Please select a valid image file (JPG, PNG, etc.)");
+      return;
+    }
+    if (f.size > 10 * 1024 * 1024) {
+      setError("Image must be under 10MB.");
+      return;
+    }
+    setError("");
     setFile(f);
     setPreview(URL.createObjectURL(f));
     setResult(null);
@@ -33,24 +35,28 @@ const UploadAnalysis = () => {
   const handleSubmit = async () => {
     if (!file) return;
     setLoading(true);
-    // TODO: real API call
-    // const formData = new FormData();
-    // formData.append("image", file);
-    // formData.append("type", type);
-    // const res = await fetch("/api/analysis/upload", { method: "POST", headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }, body: formData });
-    // const data = await res.json();
-    // setResult(data);
-    await new Promise(r => setTimeout(r, 1800));
-    setResult({
-      ai_prediction: mockAIResults[Math.floor(Math.random() * mockAIResults.length)],
-      type,
-      created_at: new Date().toLocaleString(),
-      status: "Pending Expert Review",
-    });
-    setLoading(false);
+    setError("");
+
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      formData.append("type", type);
+
+      const res = await uploadAnalysis(formData);
+      setResult(res.data.analysis);
+    } catch (err) {
+      setError(err.response?.data?.message || "Upload failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const reset = () => { setFile(null); setPreview(null); setResult(null); };
+  const reset = () => {
+    setFile(null);
+    setPreview(null);
+    setResult(null);
+    setError("");
+  };
 
   return (
     <div className="upload-section">
@@ -58,12 +64,18 @@ const UploadAnalysis = () => {
         <>
           {/* Type Toggle */}
           <div className="upload-type-toggle">
-            {["soil","seed"].map(t => (
-              <button key={t} className={`upload-type-btn ${type===t ? "upload-type-active" : ""}`} onClick={() => setType(t)}>
+            {["soil", "seed"].map((t) => (
+              <button
+                key={t}
+                className={`upload-type-btn ${type === t ? "upload-type-active" : ""}`}
+                onClick={() => setType(t)}
+              >
                 {t === "soil" ? "🌱 Soil Analysis" : "🌾 Seed Analysis"}
               </button>
             ))}
           </div>
+
+          {error && <div className="auth-error" style={{ marginBottom: 12 }}>⚠️ {error}</div>}
 
           {/* Drop Zone */}
           <div
@@ -76,7 +88,12 @@ const UploadAnalysis = () => {
             {preview ? (
               <div className="dropzone-preview">
                 <img src={preview} alt="preview" className="preview-img" />
-                <button className="preview-remove-btn" onClick={(e) => { e.stopPropagation(); reset(); }}>✕ Remove</button>
+                <button
+                  className="preview-remove-btn"
+                  onClick={(e) => { e.stopPropagation(); reset(); }}
+                >
+                  ✕ Remove
+                </button>
               </div>
             ) : (
               <div className="dropzone-placeholder">
@@ -86,11 +103,21 @@ const UploadAnalysis = () => {
               </div>
             )}
           </div>
-          <input ref={fileInputRef} type="file" accept="image/*" style={{ display:"none" }} onChange={e => handleFile(e.target.files[0])} />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={(e) => handleFile(e.target.files[0])}
+          />
 
-          <button className="auth-submit-btn upload-submit-btn" disabled={!file || loading} onClick={handleSubmit}>
+          <button
+            className="auth-submit-btn upload-submit-btn"
+            disabled={!file || loading}
+            onClick={handleSubmit}
+          >
             {loading ? (
-              <><span className="auth-spinner"></span> Analysing...</>
+              <><span className="auth-spinner"></span> Uploading & Analysing...</>
             ) : (
               <>🔬 Run AI Analysis <span className="btn-arrow">→</span></>
             )}
@@ -101,22 +128,28 @@ const UploadAnalysis = () => {
         <div className="analysis-result-card">
           <div className="arc-header">
             <span className="arc-badge">🤖 AI Result</span>
-            <span className="arc-time">{result.created_at}</span>
+            <span className="arc-time">{new Date(result.created_at).toLocaleString()}</span>
           </div>
           <div className="arc-body">
-            <img src={preview} alt="analysed" className="arc-thumb" />
+            <img src={result.image_url} alt="analysed" className="arc-thumb" />
             <div className="arc-info">
-              <div className="arc-type-tag">{result.type === "soil" ? "🌱 Soil" : "🌾 Seed"} Analysis</div>
+              <div className="arc-type-tag">
+                {result.type === "soil" ? "🌱 Soil" : "🌾 Seed"} Analysis
+              </div>
               <p className="arc-prediction">{result.ai_prediction}</p>
               <div className="arc-status">
                 <span className="arc-status-dot"></span>
-                {result.status}
+                Pending Expert Review
               </div>
             </div>
           </div>
           <div className="arc-footer">
-            <p className="arc-expert-note">✉️ An agricultural expert will review this and send you personalised advice in your inbox within 24 hours.</p>
-            <button className="btn-secondary arc-new-btn" onClick={reset}>Upload Another Image</button>
+            <p className="arc-expert-note">
+              ✉️ An agricultural expert will review this and send you personalised advice in your inbox within 24 hours.
+            </p>
+            <button className="btn-secondary arc-new-btn" onClick={reset}>
+              Upload Another Image
+            </button>
           </div>
         </div>
       )}

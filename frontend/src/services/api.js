@@ -3,24 +3,19 @@ import axios from "axios";
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 // ─── Axios instance ───────────────────────────────────────────────────────────
-// Automatically attaches Bearer token from localStorage on every request
 const api = axios.create({ baseURL: BASE_URL });
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   console.log("API Request:", config.method?.toUpperCase(), config.url);
-
   return config;
 });
 
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
+    if (error.response?.status === 401) {
       localStorage.removeItem("token");
       window.location.href = "/login";
     }
@@ -29,112 +24,102 @@ api.interceptors.response.use(
 );
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
-
-/**
- * Register a new user.
- * @param {{ full_name, email, password, role }} data
- */
-export const registerUser = (data) =>
-  api.post("/auth/register", data);
-
-/**
- * Login. Returns { token, role, full_name }.
- * @param {{ email, password }} data
- */
-export const loginUser = (data) =>
-  api.post("/auth/login", data);
-
-/**
- * Get the currently logged-in user's profile.
- * Requires valid token (auto-attached).
- */
-export const getMe = () =>
-  api.get("/auth/me");
+export const registerUser       = (data) => api.post("/auth/register", data);
+export const loginUser          = (data) => api.post("/auth/login", data);
+export const getMe              = ()     => api.get("/auth/me");
+export const verifyEmail        = (data) => api.post("/auth/verify-email", data);
+export const resendVerification = (data) => api.post("/auth/resend-verification", data);
+export const forgotPassword     = (data) => api.post("/auth/forgot-password", data);
+export const resetPassword      = (data) => api.post("/auth/reset-password", data);
+export const verifyResetOtp     = (data) => api.post("/auth/verify-reset-otp", data);
 
 // ─── Sensors ──────────────────────────────────────────────────────────────────
+export const registerSensor   = (data)     => api.post("/sensors/register", data);
+export const fetchSensorData  = ()         => api.get("/sensors/my-data");
+export const fetchDailyAverage= ()         => api.get("/sensors/daily-average");
+export const fetchMySensors   = ()         => api.get("/sensors/my-sensors");
+export const deleteSensor     = (id)       => api.delete(`/sensors/${id}`);
 
-/**
- * Register a new ESP32 sensor for the logged-in farmer.
- * @param {{ esp32_mac_address: string }} data
- */
-export const registerSensor = (data) =>
-  api.post("/sensors/register", data);
-
-/**
- * Fetch all sensor readings for the logged-in farmer.
- * Returns array of { sensor: mac, graph_data: [...] }
- */
-export const fetchSensorData = () =>
-  api.get("/sensors/my-data");
-
-/**
- * Fetch daily average moisture for the logged-in farmer.
- * Returns array of { date, avg_moisture }
- */
-export const fetchDailyAverage = () =>
-  api.get("/sensors/daily-average");
+// ─── User ─────────────────────────────────────────────────────────────────────
+export const updateProfile    = (data) => api.patch("/user/profile", data);
+export const changePassword   = (data) => api.patch("/user/change-password", data);
+export const deleteAccount    = ()     => api.delete("/user/account");
 
 // ─── Contact ──────────────────────────────────────────────────────────────────
+export const sendContactMessage = (data) => api.post("/contact", data);
+
+// ─── Analysis ─────────────────────────────────────────────────────────────────
 
 /**
- * Send a contact form message.
- * @param {{ name, email, subject, message }} formData
+ * Farmer: upload image for analysis.
+ * @param {FormData} formData  — must include fields: image (File), type ('soil'|'seed')
  */
-export const sendContactMessage = (formData) =>
-  api.post("/contact", formData);
-
-
-// frontend/src/services/api.js
-
-// ... existing imports and functions ...
+export const uploadAnalysis = (formData) =>
+  api.post("/analysis/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
 
 /**
- * Fetch all sensors owned by the logged-in farmer (without readings).
- * Returns array of sensors with MAC, status, created_at, etc.
+ * Farmer: get own analysis history.
  */
-export const fetchMySensors = () => api.get("/sensors/my-sensors");
-export const deleteSensor = (sensorId) => api.delete(`/sensors/${sensorId}`);
+export const getMyAnalyses = () => api.get("/analysis/my");
 
-export const updateProfile = (data) => api.patch("/user/profile", data);
-export const changePassword = (data) => api.patch("/user/change-password", data);
-export const deleteAccount = () => api.delete("/user/account");
+/**
+ * Expert: get pending review queue.
+ */
+export const getPendingQueue = () => api.get("/analysis/queue");
+
+/**
+ * Expert: get full detail of one analysis (includes sensor snapshot).
+ * @param {string} id  — analysis record id
+ */
+export const getAnalysisDetail = (id) => api.get(`/analysis/${id}`);
+
+/**
+ * Expert: submit feedback for an analysis.
+ * @param {string} id        — analysis record id
+ * @param {string} feedback  — advice text
+ */
+export const submitFeedback = (id, feedback) =>
+  api.post(`/analysis/${id}/feedback`, { feedback });
+
+/**
+ * Expert: get own submitted review history.
+ */
+export const getExpertHistory = () => api.get("/analysis/expert/history");
+
+// ─── Inbox ────────────────────────────────────────────────────────────────────
+
+/**
+ * Farmer: get all expert messages in inbox.
+ */
+export const getFarmerMessages = () => api.get("/inbox/messages");
+
+/**
+ * Farmer: mark a message as read.
+ * @param {string} id  — message id
+ */
+export const markMessageRead = (id) => api.patch(`/inbox/messages/${id}/read`);
+
+/**
+ * Farmer: get unread message count.
+ */
+export const getUnreadCount = () => api.get("/inbox/unread");
+
+/**
+ * Farmer: get notices (global + targeted).
+ */
+export const getFarmerNotices = () => api.get("/inbox/notices");
+
+/**
+ * Expert/Admin: send a notice to all farmers or one specific farmer.
+ * @param {{ title: string, message: string, recipient_id?: string }} data
+ */
+export const sendNotice = (data) => api.post("/inbox/notices", data);
+
+/**
+ * Expert/Admin: get list of all farmers (for broadcast dropdown).
+ */
+export const getFarmersList = () => api.get("/inbox/farmers");
 
 export default api;
-
-
-
-
-
-
-// ... existing imports and code
-
-// ─── Email Verification ─────────────────────────────────────────────
-
-/**
- * Verify email with OTP.
- * @param {{ email: string, otp: string }} data
- */
-export const verifyEmail = (data) => api.post("/auth/verify-email", data);
-
-/**
- * Resend verification OTP.
- * @param {{ email: string }} data
- */
-export const resendVerification = (data) => api.post("/auth/resend-verification", data);
-
-// ─── Password Reset ─────────────────────────────────────────────────
-
-/**
- * Request password reset OTP.
- * @param {{ email: string }} data
- */
-export const forgotPassword = (data) => api.post("/auth/forgot-password", data);
-
-/**
- * Reset password using OTP.
- * @param {{ email: string, otp: string, new_password: string }} data
- */
-export const resetPassword = (data) => api.post("/auth/reset-password", data);
-
-
-export const verifyResetOtp = (data) => api.post("/auth/verify-reset-otp", data);
