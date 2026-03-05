@@ -45,3 +45,6 @@ SMTP_FROM=noreply@agrisense.in
 {
     REACT_APP_API_URL=http://localhost:5000/api
 }
+
+
+also change the db.js file in the backend to use the production database credentials instead of the local ones.
