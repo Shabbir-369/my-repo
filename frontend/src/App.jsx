@@ -8,6 +8,7 @@ import FarmerDashboard from "./pages/FarmerDashboard";
 import ScrollToTop     from "./components/ScrollToTop";
 import PrivacyPolicy   from "./pages/PrivacyPolicy";
 import TermsOfService  from "./pages/TermsofService.jsx";
+import ExpertDashboard from "./pages/ExpertDashboard";
 import "./index.css";
 
 import VerifyEmail from "./pages/VerifyEmail";
@@ -22,6 +23,7 @@ function App() {
         <Route path="/"                  element={<Home />} />
         <Route path="/about"             element={<About />} />
         <Route path="/contact"           element={<Contact />} />
+        <Route path="/expert-dashboard" element={<ExpertDashboard />} />
         <Route path="/login"             element={<Login />} />
         <Route path="/signup"            element={<Signup />} />
         <Route path="/farmer-dashboard"  element={<FarmerDashboard />} />
@@ -29,6 +31,7 @@ function App() {
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        
       </Routes>
     </BrowserRouter>
   );
