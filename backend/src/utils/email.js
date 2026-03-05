@@ -43,4 +43,34 @@ const sendOTP = async (to, otp, purpose) => {
   }
 };
 
+
+// For sending emails via Brevo (formerly Sendinblue), you can use their official SDK. Here's how you can implement the `sendOTP` function using Brevo:
+// also note that you need to install the `sib-api-v3-sdk` package to use the Brevo SDK:
+
+// const SibApiV3Sdk = require("sib-api-v3-sdk");
+
+// const sendOTP = async (to, otp, purpose) => {
+//   const subject =
+//     purpose === "email_verification"
+//       ? "Verify your AgriSense account"
+//       : "Reset your AgriSense password";
+
+//   const text = `Your OTP is: ${otp}. It expires in 10 minutes.`;
+
+//   const client = SibApiV3Sdk.ApiClient.instance;
+//   const apiKey = client.authentications["api-key"];
+//   apiKey.apiKey = process.env.BREVO_API_KEY;
+
+//   const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+
+//   const email = {
+//     sender: { email: process.env.SMTP_FROM, name: "AgriSense" },
+//     to: [{ email: to }],
+//     subject: subject,
+//     textContent: text,
+//   };
+
+//   await apiInstance.sendTransacEmail(email);
+// };
+
 module.exports = { sendOTP };
