@@ -8,3 +8,12 @@ const pool = mysql.createPool({
 });
 
 module.exports = pool.promise();
+
+
+// for production, you can use the following code to connect to the database using a connection string:
+
+// const mysql = require("mysql2");
+
+// const pool = mysql.createPool(process.env.DATABASE_URL);
+
+// module.exports = pool.promise();
