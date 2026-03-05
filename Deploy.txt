@@ -37,6 +37,11 @@ SMTP_FROM=noreply@agrisense.in
 
 # BREVO_API_KEY=
 
+
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
 }
 
 
@@ -48,3 +53,13 @@ SMTP_FROM=noreply@agrisense.in
 
 
 also change the db.js file in the backend to use the production database credentials instead of the local ones.
+
+
+
+
+
+# use the following environment variables for Cloudinary: 
+
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
